@@ -34,49 +34,67 @@ impl<T> SafeQueue<T> {
     
 }
 
-struct WorkerControl {
+struct SharedData {
+    queue: SafeQueue<Job>,
+    queued_count: AtomicUsize,
+    active_count: AtomicUsize,
     wait_mutex: Mutex<()>,
     wait_cond: Condvar,
     shutdown: AtomicBool,
+    
 }
 
-impl WorkerControl {
-    fn new() -> WorkerControl {
-        WorkerControl { wait_mutex: Mutex::new(()), wait_cond: Condvar::new(), shutdown: false.into() }
+impl SharedData {
+    fn new() -> SharedData {
+        SharedData {
+            queue: SafeQueue::new(),
+            queued_count: 0.into(),
+            active_count: 0.into(),
+            wait_mutex: Mutex::new(()),
+            wait_cond: Condvar::new(),
+            shutdown: false.into(),
+        }
     }
+
+    fn has_work(&self) -> bool {
+        self.queued_count.load(Ordering::SeqCst) > 0 ||
+            self.active_count.load(Ordering::SeqCst) > 0
+    }
+
 }
 
 type Job = Box<dyn FnOnce() + Send + 'static>;
 type WorkerHandle = JoinHandle<()>;
 struct Worker {
-    control: Arc<WorkerControl>,
-    task_queue: Arc<SafeQueue<Job>>,
+    shared: Arc<SharedData>,
 }
 
 impl Worker {
-    fn new(control: Arc<WorkerControl>, task_queue: Arc<SafeQueue<Job>>) -> Worker {
-        Worker { control: control.clone(),  task_queue: task_queue.clone()}
+    fn new(shared: Arc<SharedData>) -> Worker {
+        Worker { shared }
     }
     fn run(&self) -> WorkerHandle{
-        let control = self.control.clone();
-        let queue = self.task_queue.clone();
+        let shared = self.shared.clone();
+
         thread::spawn(move ||{
-            while !control.shutdown.load(Ordering::Relaxed) {
-                let wait_guard = control.wait_mutex.lock().unwrap();
-                if queue.empty() {
-                    control.wait_cond.wait(wait_guard).unwrap();
+            while !shared.shutdown.load(Ordering::Relaxed) {
+                let wait_guard = shared.wait_mutex.lock().unwrap();
+                if shared.queue.empty() {
+                    shared.wait_cond.wait(wait_guard).unwrap();
                 }
-                let job = queue.dequeue();
+                let job = shared.queue.dequeue();
+                std::mem::drop(wait_guard);
+                shared.active_count.fetch_add(1, Ordering::SeqCst);
+                shared.queued_count.fetch_sub(1, Ordering::SeqCst);
                 job();
+                shared.active_count.fetch_sub(1, Ordering::SeqCst);
             }
         })
     }
 }
 
 struct ThreadPool {
-    queue: Arc<SafeQueue<Job>>,
-    working_number: AtomicUsize,
-    control: Arc<WorkerControl>,
+    shared: Arc<SharedData>,
     workers: Vec<Worker>,
     handlers: Vec<WorkerHandle>,
 }
@@ -85,17 +103,16 @@ impl ThreadPool {
     fn new(thread_num: usize) -> ThreadPool {
         
         let mut workers = Vec::with_capacity(thread_num);
-        let control = Arc::new(WorkerControl::new());
-        let queue = Arc::new(SafeQueue::new());
+        let shared = Arc::new(SharedData::new());
 
         for _ in 0..thread_num {
-            workers.push(Worker::new(control.clone(), queue.clone()));
+            workers.push(Worker::new(shared.clone()));
         }
 
         let handlers = Vec::with_capacity(thread_num);
         let working_number = AtomicUsize::new(0);
 
-        ThreadPool { queue, working_number, control, workers, handlers}
+        ThreadPool {shared, workers, handlers}
     }
     fn start(&mut self) {
         for worker in &self.workers {
@@ -104,8 +121,8 @@ impl ThreadPool {
     }
 
     fn shutdown(self) {
-        self.control.shutdown.store(true, Ordering::Relaxed);
-        self.control.wait_cond.notify_all();
+        self.shared.shutdown.store(true, Ordering::Relaxed);
+        self.shared.wait_cond.notify_all();
 
         for handler in self.handlers {
             handler.join().unwrap();
@@ -113,18 +130,22 @@ impl ThreadPool {
         
     }
 
+    fn join(&self) {
+        
+    }
+
     fn submit(&self, task: Job) {
-        self.queue.enqueue(task);
-        self.control.wait_cond.notify_one();
+        self.shared.queue.enqueue(task);
+        self.shared.wait_cond.notify_one();
     }
 }
 
 fn main() {
     let mut thread_pool = ThreadPool::new(4);
     thread_pool.submit(Box::new(||{println!("Hello world!")}));
+    thread_pool.submit(Box::new(||{println!("Hello Biden!")}));
+    thread_pool.submit(Box::new(||{println!("Hello Biden!")}));
     thread_pool.start();
-    thread_pool.submit(Box::new(||{println!("Hello Biden!")}));
-    thread_pool.submit(Box::new(||{println!("Hello Biden!")}));
     thread_pool.submit(Box::new(||{println!("Hello Biden!")}));
     thread_pool.submit(Box::new(||{println!("Hello Biden!")}));
     thread_pool.submit(Box::new(||{println!("Hello Biden!")}));
