@@ -9,3 +9,4 @@ edition = "2021"
 threadpool = "1.8.1"
 bimap = "0.6.2"
 clap = { version = "4.0.32", features = ["derive"] }
+walkdir = "2"

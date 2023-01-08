@@ -1,4 +1,8 @@
-use std::{collections::{HashMap, HashSet}, sync::{Mutex, Arc}, fs::{File}, io::{BufReader, Read}, thread, time::Duration, path::{Path, PathBuf}};
+use std::{collections::{HashMap, HashSet},
+          sync::{Mutex, Arc}, fs::{File},
+          io::{BufReader, Read},
+          path::{PathBuf}
+};
 use bimap::BiMap;
 use threadpool::ThreadPool;
 
