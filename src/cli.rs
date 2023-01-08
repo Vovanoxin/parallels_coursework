@@ -2,8 +2,8 @@ use std::path::PathBuf;
 
 use clap::{Parser, ArgGroup};
 
-// --build_index --files_dir --index_path --start_server  --index_path
-// якщо вказано і build_index та --start_server можна щоб --index_path була відсутня -
+// --build_index --files_dir --index_path --start_server
+// якщо вказано і --build_index можна щоб --index_path була відсутня
 // - тоді структура створюється в памʼяті.
 
 #[derive(Parser)]
