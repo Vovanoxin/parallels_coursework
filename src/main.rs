@@ -15,7 +15,7 @@ fn main() {
     println!("{:?} {} {}", cli.files_dir, cli.build_index, cli.start_server);
     let index =
         if cli.build_index {
-            let mut builder = IndexBuilder::new(8);
+            let mut builder = IndexBuilder::new(cli.thread_number);
 
             for entry in WalkDir::new(cli.files_dir) {
                 let entry = entry.unwrap();

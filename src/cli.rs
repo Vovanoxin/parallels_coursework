@@ -22,4 +22,7 @@ pub struct Cli {
 
     #[arg(long, default_value_t = false)]
     pub start_server: bool,
+
+    #[arg(long, default_value_t = 1)]
+    pub thread_number: usize,
 }
