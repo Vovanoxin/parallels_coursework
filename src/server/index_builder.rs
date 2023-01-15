@@ -4,6 +4,7 @@ use std::{collections::{HashMap, HashSet},
           path::{PathBuf}
 };
 use threadpool::ThreadPool;
+use walkdir::WalkDir;
 
 pub struct IndexBuilder {
     inverted_index: Arc<Mutex<HashMap<String, HashSet<PathBuf>>>>,
@@ -47,4 +48,19 @@ impl IndexBuilder {
 
         index.into_inner().unwrap()
     }
+}
+
+pub fn build_for_directory(thread_number: usize, files_dir: PathBuf) ->
+            HashMap<String, HashSet<PathBuf>>{
+    let mut builder = IndexBuilder::new(thread_number);
+
+    for entry in WalkDir::new(files_dir) {
+        let entry = entry.unwrap();
+        let path = entry.path();
+
+        if path.is_file() {
+            builder.proceed(path.to_path_buf());
+        }
+    }
+    builder.build()
 }

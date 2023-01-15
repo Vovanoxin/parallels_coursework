@@ -3,7 +3,7 @@ use tokio::net::TcpStream;
 
 
 use std::error::Error;
-use std::io::{self, Write, BufRead};
+use std::io::{Write};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -18,8 +18,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         let response = std::str::from_utf8(&buffer[0..n]).unwrap().to_string();
         println!("{response}");
     }
-
-    Ok(())
 }
 
 fn prompt(name: &str) -> String {
