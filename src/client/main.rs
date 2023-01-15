@@ -8,7 +8,7 @@ use std::io::{Write};
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     let mut stream = TcpStream::connect("127.0.0.1:8080").await?;
-    let mut buffer = vec![0; 4096];
+    let mut buffer = vec![0; 16384];
     loop {
         print!("Please enter your request\n");
         let user_input = prompt(">>");

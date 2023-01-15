@@ -28,8 +28,9 @@ impl IndexBuilder {
             buf.read_to_string(&mut file_content).unwrap();
 
             let words: HashSet<&str>  = file_content.split(&[' ', '\n'][..]).collect();
+            let mut guard = inverted_index.lock().unwrap();
             for word in &words {
-                let mut guard = inverted_index.lock().unwrap();
+
                 guard
                     .entry(word.to_string())
                     .and_modify(|set| { set.insert(filename.clone()); })

@@ -11,6 +11,8 @@ mod cli;
 use cli::Cli;
 mod index_builder;
 use index_builder::build_for_directory;
+mod benchmark;
+use benchmark::benchmark;
 
 mod server;
 use crate::server::IndexServer;
@@ -20,6 +22,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let cli = Cli::parse();
 
     println!("{:?} {} {}", cli.files_dir, cli.build_index, cli.start_server);
+
+    if cli.benchmark {
+        benchmark(cli.files_dir.clone());
+    }
+
     let index =
         if cli.build_index {
             let index = build_for_directory(cli.thread_number, cli.files_dir);
