@@ -25,4 +25,7 @@ pub struct Cli {
 
     #[arg(long, default_value_t = 1)]
     pub thread_number: usize,
+
+    #[arg(long, default_value_t = false, requires="files_dir")]
+    pub benchmark: bool,
 }
