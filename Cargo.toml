@@ -7,7 +7,6 @@ edition = "2021"
 
 [dependencies]
 threadpool = "1.8.1"
-bimap = "0.6.2"
 clap = { version = "4.0.32", features = ["derive"] }
 walkdir = "2"
 serde = { version = "1.0", features = ["derive"] }

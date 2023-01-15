@@ -9,12 +9,12 @@ use tokio::net::{TcpListener, TcpStream};
 use std::sync::Arc;
 
 pub struct IndexServer {
-    index: Arc<HashMap<String, HashSet<usize>>>,
+    index: Arc<HashMap<String, HashSet<PathBuf>>>,
     addr: SocketAddr,
 }
 
 impl IndexServer {
-    pub fn new(index: HashMap<String, HashSet<usize>>,
+    pub fn new(index: HashMap<String, HashSet<PathBuf>>,
             addr: SocketAddr) -> IndexServer {
         IndexServer {
             index: Arc::new(index),
@@ -36,7 +36,7 @@ impl IndexServer {
     }
 }
 
-async fn process_connection(mut stream: TcpStream, index: Arc<HashMap<String, HashSet<usize>>>) -> Result<(), Box<dyn Error>> {
+async fn process_connection(mut stream: TcpStream, index: Arc<HashMap<String, HashSet<PathBuf>>>) -> Result<(), Box<dyn Error>> {
     let (mut read, mut write) = stream.split();
     let mut buffer = vec![0; 1024];
     loop {
@@ -49,7 +49,7 @@ async fn process_connection(mut stream: TcpStream, index: Arc<HashMap<String, Ha
 
         let mut response = String::new();
         for word in words {
-            let search_result: Vec<String> = index[word].iter().map(|x| x.to_string()).collect();
+            let search_result: Vec<String> = index[word].iter().map(|x| x.as_path().display().to_string()).collect();
             response.push_str(&search_result.join(", "));
         }
         println!("response is: {response}");
