@@ -32,7 +32,7 @@ impl IndexBuilder {
             let mut file_content = String::new();
             let file = File::open(filename.as_path()).expect("no such file");
             let mut buf = BufReader::new(file);
-            buf.read_to_string(&mut file_content);
+            buf.read_to_string(&mut file_content).unwrap();
 
             let words: HashSet<&str>  = file_content.split(&[' ', '\n'][..]).collect();
             for word in &words {
@@ -45,13 +45,14 @@ impl IndexBuilder {
         });
     }
 
-    pub fn build(self) -> HashMap<String, HashSet<usize>>{
+    pub fn build(self) -> HashMap<String, HashSet<usize>> {
         self.thread_pool.join();
 
         let index = match Arc::try_unwrap(self.inverted_index) {
             Ok(index) => index,
             Err(_) => panic!(),
         };
+        println!("{}", self.file_ids.len());
 
         index.into_inner().unwrap()
     }
