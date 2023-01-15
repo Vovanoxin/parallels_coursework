@@ -49,8 +49,14 @@ async fn process_connection(mut stream: TcpStream, index: Arc<HashMap<String, Ha
 
         let mut response = String::new();
         for word in words {
+            if !index.contains_key(word) {
+                response.push_str(&format!("No results for {word}\n"));
+                continue;
+            }
             let search_result: Vec<String> = index[word].iter().map(|x| x.as_path().display().to_string()).collect();
+            response.push_str(&format!("Results for {word} are: "));
             response.push_str(&search_result.join(", "));
+            response.push_str("\n");
         }
         println!("response is: {response}");
         write.write(response.as_bytes()).await.unwrap();
