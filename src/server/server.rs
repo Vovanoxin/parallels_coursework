@@ -25,11 +25,11 @@ impl IndexServer {
         let listener = TcpListener::bind(self.addr).await.unwrap();
 
         loop {
-            let (stream, addr) = listener.accept().await?;
+            let (stream, _addr) = listener.accept().await?;
             let index = self.index.clone();
             tokio::spawn(async move {
-                if let Err(e) = process_connection(stream, index).await {
-                    println!("Error\n");
+                if let Err(_e) = process_connection(stream, index).await {
+                    println!("Error processing connection\n");
                 }
             });
         }
